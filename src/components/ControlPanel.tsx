@@ -3,6 +3,8 @@ import { useState } from 'react';
 interface ControlPanelProps {
     onUpdate: (params: SimulationParams) => void;
     onRestart: () => void;
+    isPaused: boolean;
+    onTogglePause: () => void;
 }
 
 export interface SimulationParams {
@@ -11,7 +13,7 @@ export interface SimulationParams {
     simulationSpeed: number;
 }
 
-export default function ControlPanel({ onUpdate, onRestart }: ControlPanelProps) {
+export default function ControlPanel({ onUpdate, onRestart, isPaused, onTogglePause }: ControlPanelProps) {
     const [params, setParams] = useState<SimulationParams>({
         foodSpawnRate: 0.5,
         mutationRate: 0.05,
@@ -58,12 +60,24 @@ export default function ControlPanel({ onUpdate, onRestart }: ControlPanelProps)
                 />
             </div>
 
-            <button
-                onClick={onRestart}
-                className="w-full py-3 bg-pastel-primary hover:bg-indigo-300 text-white font-bold rounded-full transition-colors shadow-md hover:shadow-lg"
-            >
-                Restart Simulation
-            </button>
+            <div className="flex flex-col gap-3">
+                <button
+                    onClick={onTogglePause}
+                    className={`w-full py-3 font-bold rounded-full transition-colors shadow-md hover:shadow-lg ${isPaused
+                            ? 'bg-green-500 hover:bg-green-400 text-white'
+                            : 'bg-amber-400 hover:bg-amber-300 text-white'
+                        }`}
+                >
+                    {isPaused ? 'Resume Simulation' : 'Pause Simulation'}
+                </button>
+
+                <button
+                    onClick={onRestart}
+                    className="w-full py-3 bg-pastel-primary hover:bg-indigo-300 text-white font-bold rounded-full transition-colors shadow-md hover:shadow-lg"
+                >
+                    Restart Simulation
+                </button>
+            </div>
         </div>
     );
 }

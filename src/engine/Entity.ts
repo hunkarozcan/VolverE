@@ -17,6 +17,8 @@ export class Entity {
     size: number;
     reproUrge: number;
 
+    currentTarget: Vector | null;
+
     constructor(x: number, y: number, genome?: Genome) {
         this.position = new Vector(x, y);
         this.velocity = new Vector(Math.random() - 0.5, Math.random() - 0.5);
@@ -26,6 +28,7 @@ export class Entity {
         this.age = 0;
         this.isDead = false;
         this.reproUrge = 0;
+        this.currentTarget = null;
 
         // Map genome to physical traits
         this.maxSpeed = 2 + this.genome.speed * 4;
@@ -80,8 +83,10 @@ export class Entity {
         }
 
         if (closest) {
+            this.currentTarget = closest;
             this.seek(closest);
         } else {
+            this.currentTarget = null;
             this.wander();
         }
     }
@@ -100,8 +105,10 @@ export class Entity {
         }
 
         if (closest) {
+            this.currentTarget = closest.position;
             this.seek(closest.position);
         } else {
+            this.currentTarget = null;
             this.wander();
         }
     }
