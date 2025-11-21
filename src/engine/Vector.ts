@@ -47,4 +47,8 @@ export class Vector {
         const dy = this.y - v.y;
         return Math.sqrt(dx * dx + dy * dy);
     }
+
+    static fromJSON(data: { x: number, y: number }): Vector {
+        return new Vector(data.x, data.y);
+    }
 }

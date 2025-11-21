@@ -148,4 +148,24 @@ export class Entity {
         }
         return null;
     }
+
+    toJSON() {
+        return {
+            position: this.position,
+            velocity: this.velocity,
+            genome: this.genome,
+            energy: this.energy,
+            age: this.age,
+            reproUrge: this.reproUrge
+        };
+    }
+
+    static fromJSON(data: any): Entity {
+        const e = new Entity(data.position.x, data.position.y, data.genome);
+        e.velocity = Vector.fromJSON(data.velocity);
+        e.energy = data.energy;
+        e.age = data.age;
+        e.reproUrge = data.reproUrge;
+        return e;
+    }
 }

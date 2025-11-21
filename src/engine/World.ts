@@ -2,12 +2,21 @@ import { Entity } from './Entity';
 import { Vector } from './Vector';
 import { Effect } from './Effect';
 
+export interface WorldStats {
+    time: number;
+    population: number;
+    food: number;
+    avgEnergy: number;
+    avgSpeed: number;
+}
+
 export class World {
     entities: Entity[];
     food: Vector[];
     effects: Effect[];
     width: number;
     height: number;
+    statsHistory: WorldStats[];
 
     // Parameters
     foodSpawnRate: number;
@@ -19,6 +28,7 @@ export class World {
         this.entities = [];
         this.food = [];
         this.effects = [];
+        this.statsHistory = [];
         this.foodSpawnRate = 0.5; // Chance per frame
         this.mutationRate = 0.05;
 
@@ -29,6 +39,7 @@ export class World {
         this.entities = [];
         this.food = [];
         this.effects = [];
+        this.statsHistory = [];
         for (let i = 0; i < 20; i++) {
             this.entities.push(new Entity(Math.random() * this.width, Math.random() * this.height));
         }
@@ -112,5 +123,45 @@ export class World {
         }
 
         this.entities.push(...newEntities);
+
+        // Record stats
+        if (this.statsHistory.length > 100) {
+            this.statsHistory.shift();
+        }
+        const totalEnergy = this.entities.reduce((acc, e) => acc + e.energy, 0);
+        const avgEnergy = this.entities.length ? totalEnergy / this.entities.length : 0;
+        const totalSpeed = this.entities.reduce((acc, e) => acc + e.maxSpeed, 0);
+        const avgSpeed = this.entities.length ? totalSpeed / this.entities.length : 0;
+
+        this.statsHistory.push({
+            time: Date.now(),
+            population: this.entities.length,
+            food: this.food.length,
+            avgEnergy,
+            avgSpeed
+        });
+    }
+
+    toJSON() {
+        return {
+            width: this.width,
+            height: this.height,
+            entities: this.entities.map(e => e.toJSON()),
+            food: this.food,
+            statsHistory: this.statsHistory,
+            foodSpawnRate: this.foodSpawnRate,
+            mutationRate: this.mutationRate
+        };
+    }
+
+    static fromJSON(json: string): World {
+        const data = JSON.parse(json);
+        const world = new World(data.width, data.height);
+        world.entities = data.entities.map((e: any) => Entity.fromJSON(e));
+        world.food = data.food.map((f: any) => Vector.fromJSON(f));
+        world.statsHistory = data.statsHistory || [];
+        world.foodSpawnRate = data.foodSpawnRate;
+        world.mutationRate = data.mutationRate;
+        return world;
     }
 }

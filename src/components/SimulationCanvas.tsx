@@ -1,15 +1,21 @@
 "use client";
 import { useEffect, useRef, useState } from 'react';
-import { World } from '../engine/World';
+import { World, WorldStats } from '../engine/World';
 import { Entity } from '../engine/Entity';
 import ControlPanel, { SimulationParams } from './ControlPanel';
 import EntityDetails from './EntityDetails';
+import StatisticsPanel from './StatisticsPanel';
 
-export default function SimulationCanvas() {
+interface SimulationCanvasProps {
+    initialWorldData?: string | null;
+}
+
+export default function SimulationCanvas({ initialWorldData }: SimulationCanvasProps) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const worldRef = useRef<World | null>(null);
     const [stats, setStats] = useState({ pop: 0, food: 0, avgSpeed: 0 });
+    const [statsHistory, setStatsHistory] = useState<WorldStats[]>([]);
     const simSpeedRef = useRef(1);
     const [isPaused, setIsPaused] = useState(false);
     const [selectedEntity, setSelectedEntity] = useState<Entity | null>(null);
@@ -36,6 +42,14 @@ export default function SimulationCanvas() {
         isPausedRef.current = newState;
     };
 
+    const handleSave = () => {
+        if (!worldRef.current) return;
+        const json = JSON.stringify(worldRef.current.toJSON());
+        navigator.clipboard.writeText(json).then(() => {
+            alert('Simulation data copied to clipboard!');
+        });
+    };
+
     // Handle canvas click for entity selection
     const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
         if (!isPausedRef.current || !worldRef.current || !canvasRef.current) return;
@@ -43,9 +57,6 @@ export default function SimulationCanvas() {
         const rect = canvasRef.current.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
-        // Adjust for canvas scaling if necessary (here we assume 1:1 for simplicity or handle scale)
-        // Since we set width/height directly, client coordinates should map if no CSS scaling.
-        // But canvas might be scaled by CSS. Let's assume 1:1 mapping for now as per existing code.
 
         // Find clicked entity
         let clicked: Entity | null = null;
@@ -82,7 +93,20 @@ export default function SimulationCanvas() {
         canvasRef.current.width = width > 400 ? width : 400;
         canvasRef.current.height = height;
 
-        const w = new World(canvasRef.current.width, height);
+        let w: World;
+        if (initialWorldData) {
+            w = World.fromJSON(initialWorldData);
+            // Resize world if canvas is different? Ideally we adapt canvas to world or vice versa.
+            // For now, let's force world dimensions to match canvas if it's a new sim, 
+            // but if loading, we might want to respect saved dimensions or scale.
+            // Let's just update world dimensions to current canvas to avoid bounds issues,
+            // assuming the aspect ratio isn't wildly different.
+            w.width = canvasRef.current.width;
+            w.height = height;
+        } else {
+            w = new World(canvasRef.current.width, height);
+        }
+
         worldRef.current = w;
 
         let animationId: number;
@@ -161,18 +185,8 @@ export default function SimulationCanvas() {
             }
 
             // Draw Selection Overlays
-            // We access the state selectedEntity via a ref or just closure if we didn't use state in render loop.
-            // But render is a closure created once. `selectedEntity` state change triggers re-render of component, 
-            // but `render` function inside useEffect is NOT recreated because dependency array is [].
-            // So `selectedEntity` inside `render` will be stale (null).
-            // We need to use a ref for selectedEntity to access it inside the loop.
-            // OR, we can rely on the fact that we are redrawing every frame, so we can pass the current selected entity 
-            // to a ref that is updated when state changes.
-
-            // Let's use a ref for the selected entity for the render loop
             if (selectedEntityRef.current) {
                 const e = selectedEntityRef.current;
-                // Check if entity is still alive/in world (optional, but good practice)
                 if (!e.isDead) {
                     ctx.save();
 
@@ -228,6 +242,8 @@ export default function SimulationCanvas() {
                     food: w.food.length,
                     avgSpeed: w.entities.length ? totalSpeed / w.entities.length : 0
                 });
+                // Sync stats history for graph
+                setStatsHistory([...w.statsHistory]);
             }
 
             animationId = requestAnimationFrame(render);
@@ -280,6 +296,15 @@ export default function SimulationCanvas() {
                     isPaused={isPaused}
                     onTogglePause={togglePause}
                 />
+                <div className="mt-4">
+                    <button
+                        onClick={handleSave}
+                        className="w-full py-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-bold rounded-lg transition-colors"
+                    >
+                        Save Simulation
+                    </button>
+                </div>
+                <StatisticsPanel stats={statsHistory} />
             </div>
         </div>
     );
