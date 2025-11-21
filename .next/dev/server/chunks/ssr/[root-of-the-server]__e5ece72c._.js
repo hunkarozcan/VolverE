@@ -378,7 +378,7 @@ class World {
         }
         this.entities.push(...newEntities);
         // Record stats
-        if (this.statsHistory.length > 100) {
+        if (this.statsHistory.length > 2000) {
             this.statsHistory.shift();
         }
         const totalEnergy = this.entities.reduce((acc, e)=>acc + e.energy, 0);
