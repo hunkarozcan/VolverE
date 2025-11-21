@@ -63,6 +63,16 @@ export default function StatisticsPanel({ stats }: StatisticsPanelProps) {
                         {renderLine('avgEnergy', '#facc15', 200)}
                     </svg>
                 </div>
+                {/* Avg Speed */}
+                <div className="bg-white/50 rounded-lg p-2">
+                    <div className="flex justify-between text-xs mb-1">
+                        <span className="text-cyan-400 font-bold">Avg Speed</span>
+                        <span className="text-cyan-600">{stats[stats.length - 1].avgSpeed.toFixed(2)}</span>
+                    </div>
+                    <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} className="overflow-visible">
+                        {renderLine('avgSpeed', '#22d3ee', 6)}
+                    </svg>
+                </div>
             </div>
         </div>
     );
