@@ -35,12 +35,12 @@ export class World {
         this.init();
     }
 
-    init() {
+    init(initialPopulation: number = 20) {
         this.entities = [];
         this.food = [];
         this.effects = [];
         this.statsHistory = [];
-        for (let i = 0; i < 20; i++) {
+        for (let i = 0; i < initialPopulation; i++) {
             this.entities.push(new Entity(Math.random() * this.width, Math.random() * this.height));
         }
 

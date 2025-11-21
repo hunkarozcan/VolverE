@@ -17,9 +17,10 @@ export default function SimulationCanvas({ initialWorldData }: SimulationCanvasP
     const [stats, setStats] = useState({ pop: 0, food: 0, avgSpeed: 0 });
     const [statsHistory, setStatsHistory] = useState<WorldStats[]>([]);
     const simSpeedRef = useRef(1);
-    const [isPaused, setIsPaused] = useState(false);
+    const [isPaused, setIsPaused] = useState(true); // Start paused
+    const [hasStarted, setHasStarted] = useState(false);
     const [selectedEntity, setSelectedEntity] = useState<Entity | null>(null);
-    const isPausedRef = useRef(false); // Ref for animation loop access
+    const isPausedRef = useRef(true); // Start paused
 
     const handleUpdate = (params: SimulationParams) => {
         if (worldRef.current) {
@@ -33,6 +34,18 @@ export default function SimulationCanvas({ initialWorldData }: SimulationCanvasP
         if (worldRef.current) {
             worldRef.current.init();
             setSelectedEntity(null);
+            setHasStarted(true);
+            setIsPaused(false);
+            isPausedRef.current = false;
+        }
+    };
+
+    const handleStart = (initialPop: number) => {
+        if (worldRef.current) {
+            worldRef.current.init(initialPop);
+            setHasStarted(true);
+            setIsPaused(false);
+            isPausedRef.current = false;
         }
     };
 
@@ -48,6 +61,28 @@ export default function SimulationCanvas({ initialWorldData }: SimulationCanvasP
         navigator.clipboard.writeText(json).then(() => {
             alert('Simulation data copied to clipboard!');
         });
+    };
+
+    const handleLoad = () => {
+        const json = prompt("Paste simulation JSON data:");
+        if (json) {
+            try {
+                const w = World.fromJSON(json);
+                // Update ref
+                worldRef.current = w;
+                // Update canvas size if needed, or force world size to canvas
+                if (canvasRef.current) {
+                    w.width = canvasRef.current.width;
+                    w.height = canvasRef.current.height;
+                }
+                setHasStarted(true);
+                setIsPaused(true); // Load in paused state
+                isPausedRef.current = true;
+                setSelectedEntity(null);
+            } catch (e) {
+                alert("Invalid JSON data");
+            }
+        }
     };
 
     // Handle canvas click for entity selection
@@ -75,14 +110,25 @@ export default function SimulationCanvas({ initialWorldData }: SimulationCanvasP
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.code === 'Space') {
+            if (e.code === 'Space' && hasStarted) {
                 e.preventDefault(); // Prevent scrolling
                 togglePause();
             }
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, []);
+    }, [hasStarted]);
+
+    // Ref to keep track of selected entity inside the animation loop
+    const selectedEntityRef = useRef<Entity | null>(null);
+    useEffect(() => {
+        selectedEntityRef.current = selectedEntity;
+    }, [selectedEntity]);
+
+    const hasStartedRef = useRef(false);
+    useEffect(() => {
+        hasStartedRef.current = hasStarted;
+    }, [hasStarted]);
 
     useEffect(() => {
         if (!canvasRef.current || !containerRef.current) return;
@@ -93,21 +139,15 @@ export default function SimulationCanvas({ initialWorldData }: SimulationCanvasP
         canvasRef.current.width = width > 400 ? width : 400;
         canvasRef.current.height = height;
 
-        let w: World;
-        if (initialWorldData) {
-            w = World.fromJSON(initialWorldData);
-            // Resize world if canvas is different? Ideally we adapt canvas to world or vice versa.
-            // For now, let's force world dimensions to match canvas if it's a new sim, 
-            // but if loading, we might want to respect saved dimensions or scale.
-            // Let's just update world dimensions to current canvas to avoid bounds issues,
-            // assuming the aspect ratio isn't wildly different.
-            w.width = canvasRef.current.width;
-            w.height = height;
-        } else {
-            w = new World(canvasRef.current.width, height);
+        // Initialize empty world if not already set
+        if (!worldRef.current) {
+            const w = new World(canvasRef.current.width, height);
+            w.entities = [];
+            w.food = [];
+            worldRef.current = w;
         }
 
-        worldRef.current = w;
+        const w = worldRef.current!;
 
         let animationId: number;
         const ctx = canvasRef.current.getContext('2d');
@@ -118,8 +158,8 @@ export default function SimulationCanvas({ initialWorldData }: SimulationCanvasP
         const render = () => {
             if (!ctx) return;
 
-            // Run updates based on sim speed ONLY if not paused
-            if (!isPausedRef.current) {
+            // Run updates based on sim speed ONLY if not paused and started
+            if (!isPausedRef.current && hasStartedRef.current) {
                 speedAccumulator += simSpeedRef.current;
                 while (speedAccumulator >= 1) {
                     w.update();
@@ -252,13 +292,7 @@ export default function SimulationCanvas({ initialWorldData }: SimulationCanvasP
         render();
 
         return () => cancelAnimationFrame(animationId);
-    }, []); // Empty dependency array means this runs once.
-
-    // Ref to keep track of selected entity inside the animation loop
-    const selectedEntityRef = useRef<Entity | null>(null);
-    useEffect(() => {
-        selectedEntityRef.current = selectedEntity;
-    }, [selectedEntity]);
+    }, []);
 
     return (
         <div ref={containerRef} className="w-full flex flex-col lg:flex-row gap-6 relative">
@@ -294,16 +328,12 @@ export default function SimulationCanvas({ initialWorldData }: SimulationCanvasP
                     onUpdate={handleUpdate}
                     onRestart={handleRestart}
                     isPaused={isPaused}
+                    hasStarted={hasStarted}
                     onTogglePause={togglePause}
+                    onStart={handleStart}
+                    onSave={handleSave}
+                    onLoad={handleLoad}
                 />
-                <div className="mt-4">
-                    <button
-                        onClick={handleSave}
-                        className="w-full py-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-bold rounded-lg transition-colors"
-                    >
-                        Save Simulation
-                    </button>
-                </div>
                 <StatisticsPanel stats={statsHistory} />
             </div>
         </div>

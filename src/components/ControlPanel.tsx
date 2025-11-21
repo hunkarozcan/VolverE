@@ -4,7 +4,11 @@ interface ControlPanelProps {
     onUpdate: (params: SimulationParams) => void;
     onRestart: () => void;
     isPaused: boolean;
+    hasStarted: boolean;
     onTogglePause: () => void;
+    onStart: (initialPop: number) => void;
+    onSave: () => void;
+    onLoad: () => void;
 }
 
 export interface SimulationParams {
@@ -13,12 +17,22 @@ export interface SimulationParams {
     simulationSpeed: number;
 }
 
-export default function ControlPanel({ onUpdate, onRestart, isPaused, onTogglePause }: ControlPanelProps) {
+export default function ControlPanel({
+    onUpdate,
+    onRestart,
+    isPaused,
+    hasStarted,
+    onTogglePause,
+    onStart,
+    onSave,
+    onLoad
+}: ControlPanelProps) {
     const [params, setParams] = useState<SimulationParams>({
         foodSpawnRate: 0.5,
         mutationRate: 0.05,
         simulationSpeed: 1
     });
+    const [initialPop, setInitialPop] = useState(20);
 
     const handleChange = (key: keyof SimulationParams, value: number) => {
         const newParams = { ...params, [key]: value };
@@ -29,6 +43,18 @@ export default function ControlPanel({ onUpdate, onRestart, isPaused, onTogglePa
     return (
         <div className="p-6 bg-pastel-surface rounded-xl shadow-lg shadow-indigo-100 text-pastel-text w-full">
             <h3 className="text-xl font-bold mb-6 text-pastel-primary">Controls</h3>
+
+            {!hasStarted && (
+                <div className="mb-6 p-4 bg-indigo-50 rounded-lg border border-indigo-100">
+                    <label className="block text-sm font-bold mb-2 text-indigo-900">Initial Population: {initialPop}</label>
+                    <input
+                        type="range" min="1" max="100" step="1"
+                        value={initialPop}
+                        onChange={(e) => setInitialPop(parseInt(e.target.value))}
+                        className="w-full h-2 bg-indigo-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                    />
+                </div>
+            )}
 
             <div className="mb-6">
                 <label className="block text-sm font-medium mb-2 text-gray-600">Food Spawn Rate: {params.foodSpawnRate.toFixed(2)}</label>
@@ -61,22 +87,49 @@ export default function ControlPanel({ onUpdate, onRestart, isPaused, onTogglePa
             </div>
 
             <div className="flex flex-col gap-3">
-                <button
-                    onClick={onTogglePause}
-                    className={`w-full py-3 font-bold rounded-full transition-colors shadow-md hover:shadow-lg ${isPaused
+                {!hasStarted ? (
+                    <button
+                        onClick={() => onStart(initialPop)}
+                        className="w-full py-3 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold rounded-full transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                    >
+                        Start Simulation
+                    </button>
+                ) : (
+                    <button
+                        onClick={onTogglePause}
+                        className={`w-full py-3 font-bold rounded-full transition-colors shadow-md hover:shadow-lg ${isPaused
                             ? 'bg-green-500 hover:bg-green-400 text-white'
                             : 'bg-amber-400 hover:bg-amber-300 text-white'
-                        }`}
-                >
-                    {isPaused ? 'Resume Simulation' : 'Pause Simulation'}
-                </button>
+                            }`}
+                    >
+                        {isPaused ? 'Resume Simulation' : 'Pause Simulation'}
+                    </button>
+                )}
 
-                <button
-                    onClick={onRestart}
-                    className="w-full py-3 bg-pastel-primary hover:bg-indigo-300 text-white font-bold rounded-full transition-colors shadow-md hover:shadow-lg"
-                >
-                    Restart Simulation
-                </button>
+                <div className="grid grid-cols-2 gap-3">
+                    <button
+                        onClick={onSave}
+                        disabled={!hasStarted}
+                        className="py-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        Save
+                    </button>
+                    <button
+                        onClick={onLoad}
+                        className="py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg transition-colors"
+                    >
+                        Load
+                    </button>
+                </div>
+
+                {hasStarted && (
+                    <button
+                        onClick={onRestart}
+                        className="w-full py-2 mt-2 text-sm text-slate-400 hover:text-red-500 font-medium transition-colors"
+                    >
+                        Reset / Restart
+                    </button>
+                )}
             </div>
         </div>
     );
