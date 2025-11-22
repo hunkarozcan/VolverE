@@ -14,7 +14,7 @@ export default function SimulationCanvas({ initialWorldData }: SimulationCanvasP
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const worldRef = useRef<World | null>(null);
-    const [stats, setStats] = useState({ pop: 0, food: 0, avgSpeed: 0 });
+    const [stats, setStats] = useState({ pop: 0, food: 0, avgSpeed: 0, avgDeathAge: 0 });
     const [statsHistory, setStatsHistory] = useState<WorldStats[]>([]);
     const simSpeedRef = useRef(1);
     const [isPaused, setIsPaused] = useState(true); // Start paused
@@ -280,7 +280,8 @@ export default function SimulationCanvas({ initialWorldData }: SimulationCanvasP
                 setStats({
                     pop: w.entities.length,
                     food: w.food.length,
-                    avgSpeed: w.entities.length ? totalSpeed / w.entities.length : 0
+                    avgSpeed: w.entities.length ? totalSpeed / w.entities.length : 0,
+                    avgDeathAge: w.totalDeaths > 0 ? w.totalDeathAge / w.totalDeaths : 0
                 });
                 // Sync stats history for graph
                 setStatsHistory([...w.statsHistory]);
@@ -316,11 +317,15 @@ export default function SimulationCanvas({ initialWorldData }: SimulationCanvasP
                         <span className="text-xs text-gray-400 uppercase tracking-wider">Avg Speed</span>
                         <span className="text-2xl font-bold text-pastel-secondary">{stats.avgSpeed.toFixed(2)}</span>
                     </div>
+                    <div className="flex flex-col">
+                        <span className="text-xs text-gray-400 uppercase tracking-wider">Avg Death Age</span>
+                        <span className="text-2xl font-bold text-red-400">{stats.avgDeathAge.toFixed(1)}</span>
+                    </div>
                 </div>
                 <canvas
                     ref={canvasRef}
                     onClick={handleCanvasClick}
-                    className={`rounded-xl shadow-2xl shadow-indigo-200 w-full ${isPaused ? 'cursor-pointer' : 'cursor-default'}`}
+                    className={`rounded - xl shadow - 2xl shadow - indigo - 200 w - full ${isPaused ? 'cursor-pointer' : 'cursor-default'} `}
                 />
             </div>
             <div className="w-full lg:w-80">

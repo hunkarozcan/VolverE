@@ -99,7 +99,7 @@
         "transform": "lodash/{{member}}"
       }
     },
-    "outputFileTracingRoot": "E:\\Projects\\VolverE",
+    "outputFileTracingRoot": "D:\\Projects\\VolverE\\VolverE",
     "cacheComponents": false,
     "cacheLife": {
       "default": {
@@ -157,7 +157,7 @@
       "proxyPrefetch": "flexible",
       "optimisticClientCache": true,
       "manualClientBasePath": false,
-      "cpus": 11,
+      "cpus": 15,
       "memoryBasedWorkersCount": false,
       "imgOptConcurrency": null,
       "imgOptTimeoutInSeconds": 7,
@@ -290,11 +290,11 @@
     "bundlePagesRouterDependencies": false,
     "configFileName": "next.config.js",
     "turbopack": {
-      "root": "E:\\Projects\\VolverE"
+      "root": "D:\\Projects\\VolverE\\VolverE"
     },
     "distDirRoot": ".next"
   },
-  "appDir": "E:\\Projects\\VolverE",
+  "appDir": "D:\\Projects\\VolverE\\VolverE",
   "relativeAppDir": "",
   "files": [
     ".next\\routes-manifest.json",

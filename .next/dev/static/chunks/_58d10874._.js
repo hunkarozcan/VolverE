@@ -290,6 +290,9 @@ class World {
     // Parameters
     foodSpawnRate;
     mutationRate;
+    // Stats tracking
+    totalDeaths = 0;
+    totalDeathAge = 0;
     constructor(width, height){
         this.width = width;
         this.height = height;
@@ -332,6 +335,9 @@ class World {
             const e = this.entities[i];
             e.update(this.width, this.height, this.food, this.entities);
             if (e.isDead) {
+                // Entity died
+                this.totalDeaths++;
+                this.totalDeathAge += e.age;
                 this.effects.push({
                     x: e.position.x,
                     y: e.position.y,
@@ -381,19 +387,21 @@ class World {
         }
         this.entities.push(...newEntities);
         // Record stats
-        if (this.statsHistory.length > 2000) {
+        if (this.statsHistory.length > 20000) {
             this.statsHistory.shift();
         }
         const totalEnergy = this.entities.reduce((acc, e)=>acc + e.energy, 0);
         const avgEnergy = this.entities.length ? totalEnergy / this.entities.length : 0;
         const totalSpeed = this.entities.reduce((acc, e)=>acc + e.maxSpeed, 0);
         const avgSpeed = this.entities.length ? totalSpeed / this.entities.length : 0;
+        const avgDeathAge = this.totalDeaths > 0 ? this.totalDeathAge / this.totalDeaths : 0;
         this.statsHistory.push({
             time: Date.now(),
             population: this.entities.length,
             food: this.food.length,
             avgEnergy,
-            avgSpeed
+            avgSpeed,
+            avgDeathAge
         });
     }
     toJSON() {
@@ -404,7 +412,9 @@ class World {
             food: this.food,
             statsHistory: this.statsHistory,
             foodSpawnRate: this.foodSpawnRate,
-            mutationRate: this.mutationRate
+            mutationRate: this.mutationRate,
+            totalDeaths: this.totalDeaths,
+            totalDeathAge: this.totalDeathAge
         };
     }
     static fromJSON(json) {
@@ -415,6 +425,8 @@ class World {
         world.statsHistory = data.statsHistory || [];
         world.foodSpawnRate = data.foodSpawnRate;
         world.mutationRate = data.mutationRate;
+        world.totalDeaths = data.totalDeaths || 0;
+        world.totalDeathAge = data.totalDeathAge || 0;
         return world;
     }
 }
@@ -1185,6 +1197,51 @@ function StatisticsPanel({ stats }) {
                         fileName: "[project]/src/components/StatisticsPanel.tsx",
                         lineNumber: 57,
                         columnNumber: 17
+                    }, this),
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                        className: "bg-white/50 rounded-lg p-2",
+                        children: [
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                className: "flex justify-between text-xs mb-1",
+                                children: [
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                        className: "text-cyan-400 font-bold",
+                                        children: "Avg Speed"
+                                    }, void 0, false, {
+                                        fileName: "[project]/src/components/StatisticsPanel.tsx",
+                                        lineNumber: 69,
+                                        columnNumber: 25
+                                    }, this),
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                        className: "text-cyan-600",
+                                        children: stats[stats.length - 1].avgSpeed.toFixed(2)
+                                    }, void 0, false, {
+                                        fileName: "[project]/src/components/StatisticsPanel.tsx",
+                                        lineNumber: 70,
+                                        columnNumber: 25
+                                    }, this)
+                                ]
+                            }, void 0, true, {
+                                fileName: "[project]/src/components/StatisticsPanel.tsx",
+                                lineNumber: 68,
+                                columnNumber: 21
+                            }, this),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("svg", {
+                                width: "100%",
+                                height: height,
+                                viewBox: `0 0 ${width} ${height}`,
+                                className: "overflow-visible",
+                                children: renderLine('avgSpeed', '#22d3ee', 6)
+                            }, void 0, false, {
+                                fileName: "[project]/src/components/StatisticsPanel.tsx",
+                                lineNumber: 72,
+                                columnNumber: 21
+                            }, this)
+                        ]
+                    }, void 0, true, {
+                        fileName: "[project]/src/components/StatisticsPanel.tsx",
+                        lineNumber: 67,
+                        columnNumber: 17
                     }, this)
                 ]
             }, void 0, true, {
@@ -1235,7 +1292,8 @@ function SimulationCanvas({ initialWorldData }) {
     const [stats, setStats] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])({
         pop: 0,
         food: 0,
-        avgSpeed: 0
+        avgSpeed: 0,
+        avgDeathAge: 0
     });
     const [statsHistory, setStatsHistory] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])([]);
     const simSpeedRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useRef"])(1);
@@ -1490,7 +1548,8 @@ function SimulationCanvas({ initialWorldData }) {
                         setStats({
                             pop: w.entities.length,
                             food: w.food.length,
-                            avgSpeed: w.entities.length ? totalSpeed / w.entities.length : 0
+                            avgSpeed: w.entities.length ? totalSpeed / w.entities.length : 0,
+                            avgDeathAge: w.totalDeaths > 0 ? w.totalDeathAge / w.totalDeaths : 0
                         });
                         // Sync stats history for graph
                         setStatsHistory([
@@ -1515,7 +1574,7 @@ function SimulationCanvas({ initialWorldData }) {
                 onClose: ()=>setSelectedEntity(null)
             }, void 0, false, {
                 fileName: "[project]/src/components/SimulationCanvas.tsx",
-                lineNumber: 300,
+                lineNumber: 301,
                 columnNumber: 17
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1532,7 +1591,7 @@ function SimulationCanvas({ initialWorldData }) {
                                         children: "Population"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/SimulationCanvas.tsx",
-                                        lineNumber: 308,
+                                        lineNumber: 309,
                                         columnNumber: 25
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1540,13 +1599,13 @@ function SimulationCanvas({ initialWorldData }) {
                                         children: stats.pop
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/SimulationCanvas.tsx",
-                                        lineNumber: 309,
+                                        lineNumber: 310,
                                         columnNumber: 25
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/SimulationCanvas.tsx",
-                                lineNumber: 307,
+                                lineNumber: 308,
                                 columnNumber: 21
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1557,7 +1616,7 @@ function SimulationCanvas({ initialWorldData }) {
                                         children: "Food"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/SimulationCanvas.tsx",
-                                        lineNumber: 312,
+                                        lineNumber: 313,
                                         columnNumber: 25
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1565,13 +1624,13 @@ function SimulationCanvas({ initialWorldData }) {
                                         children: stats.food
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/SimulationCanvas.tsx",
-                                        lineNumber: 313,
+                                        lineNumber: 314,
                                         columnNumber: 25
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/SimulationCanvas.tsx",
-                                lineNumber: 311,
+                                lineNumber: 312,
                                 columnNumber: 21
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1582,7 +1641,7 @@ function SimulationCanvas({ initialWorldData }) {
                                         children: "Avg Speed"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/SimulationCanvas.tsx",
-                                        lineNumber: 316,
+                                        lineNumber: 317,
                                         columnNumber: 25
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1590,34 +1649,59 @@ function SimulationCanvas({ initialWorldData }) {
                                         children: stats.avgSpeed.toFixed(2)
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/SimulationCanvas.tsx",
-                                        lineNumber: 317,
+                                        lineNumber: 318,
                                         columnNumber: 25
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/SimulationCanvas.tsx",
-                                lineNumber: 315,
+                                lineNumber: 316,
+                                columnNumber: 21
+                            }, this),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                className: "flex flex-col",
+                                children: [
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                        className: "text-xs text-gray-400 uppercase tracking-wider",
+                                        children: "Avg Death Age"
+                                    }, void 0, false, {
+                                        fileName: "[project]/src/components/SimulationCanvas.tsx",
+                                        lineNumber: 321,
+                                        columnNumber: 25
+                                    }, this),
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                        className: "text-2xl font-bold text-red-400",
+                                        children: stats.avgDeathAge.toFixed(1)
+                                    }, void 0, false, {
+                                        fileName: "[project]/src/components/SimulationCanvas.tsx",
+                                        lineNumber: 322,
+                                        columnNumber: 25
+                                    }, this)
+                                ]
+                            }, void 0, true, {
+                                fileName: "[project]/src/components/SimulationCanvas.tsx",
+                                lineNumber: 320,
                                 columnNumber: 21
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/SimulationCanvas.tsx",
-                        lineNumber: 306,
+                        lineNumber: 307,
                         columnNumber: 17
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("canvas", {
                         ref: canvasRef,
                         onClick: handleCanvasClick,
-                        className: `rounded-xl shadow-2xl shadow-indigo-200 w-full ${isPaused ? 'cursor-pointer' : 'cursor-default'}`
+                        className: `rounded - xl shadow - 2xl shadow - indigo - 200 w - full ${isPaused ? 'cursor-pointer' : 'cursor-default'} `
                     }, void 0, false, {
                         fileName: "[project]/src/components/SimulationCanvas.tsx",
-                        lineNumber: 320,
+                        lineNumber: 325,
                         columnNumber: 17
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/components/SimulationCanvas.tsx",
-                lineNumber: 305,
+                lineNumber: 306,
                 columnNumber: 13
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1634,30 +1718,30 @@ function SimulationCanvas({ initialWorldData }) {
                         onLoad: handleLoad
                     }, void 0, false, {
                         fileName: "[project]/src/components/SimulationCanvas.tsx",
-                        lineNumber: 327,
+                        lineNumber: 332,
                         columnNumber: 17
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$StatisticsPanel$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
                         stats: statsHistory
                     }, void 0, false, {
                         fileName: "[project]/src/components/SimulationCanvas.tsx",
-                        lineNumber: 337,
+                        lineNumber: 342,
                         columnNumber: 17
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/components/SimulationCanvas.tsx",
-                lineNumber: 326,
+                lineNumber: 331,
                 columnNumber: 13
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/components/SimulationCanvas.tsx",
-        lineNumber: 298,
+        lineNumber: 299,
         columnNumber: 9
     }, this);
 }
-_s(SimulationCanvas, "AHiHmczrEMZtqdPlNayXGHb0dFc=");
+_s(SimulationCanvas, "qo9fLmb8iTotMp2I+5uu0EgHeYY=");
 _c = SimulationCanvas;
 var _c;
 __turbopack_context__.k.register(_c, "SimulationCanvas");
@@ -1684,39 +1768,40 @@ function Home() {
             className: "max-w-7xl mx-auto",
             children: [
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("header", {
-                    className: "mb-8 flex items-center justify-between",
-                    children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                        children: [
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h1", {
-                                className: "text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-purple-600 mb-2",
+                    className: "mb-12 text-center",
+                    children: [
+                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h1", {
+                            className: "text-6xl md:text-7xl font-black tracking-tighter mb-2",
+                            children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                className: "text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-violet-500 drop-shadow-sm",
                                 children: "VolverE"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/page.tsx",
                                 lineNumber: 10,
                                 columnNumber: 25
-                            }, this),
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                className: "text-slate-500 font-medium",
-                                children: "Evolutionary Simulation Engine"
-                            }, void 0, false, {
-                                fileName: "[project]/src/app/page.tsx",
-                                lineNumber: 13,
-                                columnNumber: 25
                             }, this)
-                        ]
-                    }, void 0, true, {
-                        fileName: "[project]/src/app/page.tsx",
-                        lineNumber: 9,
-                        columnNumber: 21
-                    }, this)
-                }, void 0, false, {
+                        }, void 0, false, {
+                            fileName: "[project]/src/app/page.tsx",
+                            lineNumber: 9,
+                            columnNumber: 21
+                        }, this),
+                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
+                            className: "text-xs md:text-sm font-bold text-slate-400 uppercase tracking-[0.3em] ml-1",
+                            children: "Evolutionary Simulation Engine"
+                        }, void 0, false, {
+                            fileName: "[project]/src/app/page.tsx",
+                            lineNumber: 14,
+                            columnNumber: 21
+                        }, this)
+                    ]
+                }, void 0, true, {
                     fileName: "[project]/src/app/page.tsx",
                     lineNumber: 8,
                     columnNumber: 17
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$SimulationCanvas$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {}, void 0, false, {
                     fileName: "[project]/src/app/page.tsx",
-                    lineNumber: 17,
+                    lineNumber: 19,
                     columnNumber: 17
                 }, this)
             ]

@@ -8,6 +8,7 @@ export interface WorldStats {
     food: number;
     avgEnergy: number;
     avgSpeed: number;
+    avgDeathAge: number;
 }
 
 export class World {
@@ -21,6 +22,10 @@ export class World {
     // Parameters
     foodSpawnRate: number;
     mutationRate: number;
+
+    // Stats tracking
+    totalDeaths: number = 0;
+    totalDeathAge: number = 0;
 
     constructor(width: number, height: number) {
         this.width = width;
@@ -72,6 +77,10 @@ export class World {
             e.update(this.width, this.height, this.food, this.entities);
 
             if (e.isDead) {
+                // Entity died
+                this.totalDeaths++;
+                this.totalDeathAge += e.age;
+
                 this.effects.push({
                     x: e.position.x,
                     y: e.position.y,
@@ -125,7 +134,7 @@ export class World {
         this.entities.push(...newEntities);
 
         // Record stats
-        if (this.statsHistory.length > 2000) {
+        if (this.statsHistory.length > 20000) {
             this.statsHistory.shift();
         }
         const totalEnergy = this.entities.reduce((acc, e) => acc + e.energy, 0);
@@ -133,12 +142,15 @@ export class World {
         const totalSpeed = this.entities.reduce((acc, e) => acc + e.maxSpeed, 0);
         const avgSpeed = this.entities.length ? totalSpeed / this.entities.length : 0;
 
+        const avgDeathAge = this.totalDeaths > 0 ? this.totalDeathAge / this.totalDeaths : 0;
+
         this.statsHistory.push({
             time: Date.now(),
             population: this.entities.length,
             food: this.food.length,
             avgEnergy,
-            avgSpeed
+            avgSpeed,
+            avgDeathAge
         });
     }
 
@@ -150,7 +162,9 @@ export class World {
             food: this.food,
             statsHistory: this.statsHistory,
             foodSpawnRate: this.foodSpawnRate,
-            mutationRate: this.mutationRate
+            mutationRate: this.mutationRate,
+            totalDeaths: this.totalDeaths,
+            totalDeathAge: this.totalDeathAge
         };
     }
 
@@ -162,6 +176,8 @@ export class World {
         world.statsHistory = data.statsHistory || [];
         world.foodSpawnRate = data.foodSpawnRate;
         world.mutationRate = data.mutationRate;
+        world.totalDeaths = data.totalDeaths || 0;
+        world.totalDeathAge = data.totalDeathAge || 0;
         return world;
     }
 }
