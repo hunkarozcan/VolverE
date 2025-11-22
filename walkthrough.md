@@ -21,18 +21,29 @@ This document outlines the new features added to the simulation: Pause/Resume fu
 - **Target Vector**: A red dashed line points to the entity's current target (food or mate), with a red "X" at the target location.
 - **Highlight**: The selected entity is highlighted with a white ring.
 
+
+### 4. Header Redesign
+- **Modern Look**: Replaced the image logo with a sleek, gradient-text header "VolverE".
+- **Subtitle**: Added "Evolutionary Simulation Engine" subtitle with tracking.
+
+### 5. Statistics Update
+- **Average Death Age**: Added a new metric to the statistics panel.
+- **Functionality**: Tracks and displays the average age at which entities die, providing insight into the longevity of the population over time.
+
 ## Verification Steps
 
 1.  **Start the Simulation**: Open the application.
-2.  **Pause**: Press `Spacebar` or click "Pause Simulation". Verify entities stop moving.
-3.  **Select Entity**: Click on an entity. Verify the "Entity Inspector" window opens.
-4.  **Inspect Data**: Check that the data in the window matches the visual properties (e.g., color, approximate position).
-5.  **Check Overlays**:
+2.  **Check Header**: Verify the new "VolverE" gradient text header is visible.
+3.  **Pause**: Press `Spacebar` or click "Pause Simulation". Verify entities stop moving.
+4.  **Select Entity**: Click on an entity. Verify the "Entity Inspector" window opens.
+5.  **Inspect Data**: Check that the data in the window matches the visual properties (e.g., color, approximate position).
+6.  **Check Overlays**:
     - Verify the yellow vision circle.
     - If the entity was hunting or seeking a mate, verify the red dashed line points to a food item or another entity.
-6.  **Resume**: Press `Spacebar`. Verify the simulation continues.
+7.  **Resume**: Press `Spacebar`. Verify the simulation continues.
     - *Note*: The selection and overlays remain active, allowing you to track the entity in real-time!
-7.  **Restart**: Click "Restart Simulation". Verify selection is cleared and simulation resets.
+8.  **Check Stats**: Observe the "Avg Death Age" statistic in the panel. Wait for some entities to die (or speed up simulation) and verify the number updates.
+9.  **Restart**: Click "Restart Simulation". Verify selection is cleared and simulation resets.
 
 ## Screenshots
 

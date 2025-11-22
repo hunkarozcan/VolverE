@@ -1,2 +1,5 @@
+- [x] Refine Header (Remove logo, use typography)
+- [x] Add Average Death Age Statistic
+- [x] Implement Simulation Pause & Inspect
 - [ ] Implement environmental factors (e.g., temperature, terrain).
 - [ ] Add data export functionality for simulation statistics.
