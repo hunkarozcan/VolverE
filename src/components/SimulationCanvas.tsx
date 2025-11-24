@@ -135,7 +135,7 @@ export default function SimulationCanvas({ initialWorldData }: SimulationCanvasP
 
         // Resize canvas to fit container
         const width = containerRef.current.clientWidth - 340;
-        const height = 600;
+        const height = 800;
         canvasRef.current.width = width > 400 ? width : 400;
         canvasRef.current.height = height;
 

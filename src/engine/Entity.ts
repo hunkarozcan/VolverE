@@ -130,10 +130,22 @@ export class Entity {
     }
 
     checkBoundaries(width: number, height: number) {
-        if (this.position.x < -this.size) this.position.x = width + this.size;
-        if (this.position.x > width + this.size) this.position.x = -this.size;
-        if (this.position.y < -this.size) this.position.y = height + this.size;
-        if (this.position.y > height + this.size) this.position.y = -this.size;
+        if (this.position.x < this.size) {
+            this.position.x = this.size;
+            this.velocity.x *= -1;
+        }
+        if (this.position.x > width - this.size) {
+            this.position.x = width - this.size;
+            this.velocity.x *= -1;
+        }
+        if (this.position.y < this.size) {
+            this.position.y = this.size;
+            this.velocity.y *= -1;
+        }
+        if (this.position.y > height - this.size) {
+            this.position.y = height - this.size;
+            this.velocity.y *= -1;
+        }
     }
 
     reproduce(partner: Entity, mutationRate: number = 0.05): Entity | null {
