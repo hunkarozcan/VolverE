@@ -37,7 +37,7 @@ export class Entity {
         this.size = 5 + this.genome.size * 15;
     }
 
-    update(width: number, height: number, food: Vector[], entities: Entity[]) {
+    update(width: number, height: number, food: Vector[], entities: Entity[], terrain?: number[][]) {
         this.age++;
         this.reproUrge++;
 
@@ -55,6 +55,26 @@ export class Entity {
             this.findMate(entities);
         } else {
             this.hunt(food);
+        }
+
+        // Terrain Physics
+        if (terrain) {
+            const gridX = Math.floor(this.position.x / 10);
+            const gridY = Math.floor(this.position.y / 10);
+            
+            if (gridX >= 0 && gridX < terrain.length - 1 && gridY >= 0 && gridY < terrain[0].length - 1) {
+                const h = terrain[gridX][gridY];
+                const hRight = terrain[gridX + 1][gridY];
+                const hDown = terrain[gridX][gridY + 1];
+                
+                const slopeX = hRight - h;
+                const slopeY = hDown - h;
+                
+                // Gravity/Slope force: push downhill
+                // If slope is positive (uphill), force is negative.
+                const slopeForce = new Vector(-slopeX * 2, -slopeY * 2);
+                this.applyForce(slopeForce);
+            }
         }
 
         // Physics

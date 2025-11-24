@@ -171,6 +171,24 @@ export default function SimulationCanvas({ initialWorldData }: SimulationCanvasP
             ctx.fillStyle = '#2d2b42';
             ctx.fillRect(0, 0, w.width, w.height);
 
+            // Draw Terrain
+            if (w.terrain) {
+                const cellSize = 10;
+                for (let x = 0; x < w.terrain.length; x++) {
+                    for (let y = 0; y < w.terrain[x].length; y++) {
+                        const h = w.terrain[x][y];
+                        // Map height to color (dark blue/purple to lighter)
+                        // Base: #2d2b42 (45, 43, 66)
+                        // High: #4c4a6e (76, 74, 110)
+                        const r = Math.floor(45 + h * 30);
+                        const g = Math.floor(43 + h * 30);
+                        const b = Math.floor(66 + h * 40);
+                        ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+                        ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+                    }
+                }
+            }
+
             // Draw Food
             ctx.fillStyle = '#4ade80';
             for (const f of w.food) {
