@@ -22,12 +22,23 @@ export default function SimulationCanvas({ initialWorldData }: SimulationCanvasP
     const [selectedEntity, setSelectedEntity] = useState<Entity | null>(null);
     const isPausedRef = useRef(true); // Start paused
 
+    const terrainStrengthRef = useRef(1.0);
+
     const handleUpdate = (params: SimulationParams) => {
         if (worldRef.current) {
             worldRef.current.foodSpawnRate = params.foodSpawnRate;
             worldRef.current.mutationRate = params.mutationRate;
+            worldRef.current.terrainScale = params.terrainScale;
+            worldRef.current.terrainStrength = params.terrainStrength;
         }
         simSpeedRef.current = params.simulationSpeed;
+        terrainStrengthRef.current = params.terrainStrength;
+    };
+
+    const handleRegenerateTerrain = () => {
+        if (worldRef.current) {
+            worldRef.current.regenerateTerrain();
+        }
     };
 
     const handleRestart = () => {
@@ -356,6 +367,7 @@ export default function SimulationCanvas({ initialWorldData }: SimulationCanvasP
                     onStart={handleStart}
                     onSave={handleSave}
                     onLoad={handleLoad}
+                    onRegenerateTerrain={handleRegenerateTerrain}
                 />
                 <StatisticsPanel stats={statsHistory} />
             </div>

@@ -37,7 +37,7 @@ export class Entity {
         this.size = 5 + this.genome.size * 15;
     }
 
-    update(width: number, height: number, food: Vector[], entities: Entity[], terrain?: number[][]) {
+    update(width: number, height: number, food: Vector[], entities: Entity[], terrain?: number[][], terrainStrength: number = 1.0) {
         this.age++;
         this.reproUrge++;
 
@@ -72,7 +72,7 @@ export class Entity {
                 
                 // Gravity/Slope force: push downhill
                 // If slope is positive (uphill), force is negative.
-                const slopeForce = new Vector(-slopeX * 2, -slopeY * 2);
+                const slopeForce = new Vector(-slopeX * 2 * terrainStrength, -slopeY * 2 * terrainStrength);
                 this.applyForce(slopeForce);
             }
         }

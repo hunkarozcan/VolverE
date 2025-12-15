@@ -25,6 +25,8 @@ export class World {
     // Parameters
     foodSpawnRate: number;
     mutationRate: number;
+    terrainScale: number;
+    terrainStrength: number;
 
     // Stats tracking
     totalDeaths: number = 0;
@@ -41,6 +43,8 @@ export class World {
         this.perlin = new Perlin();
         this.foodSpawnRate = 0.5; // Chance per frame
         this.mutationRate = 0.05;
+        this.terrainScale = 0.005;
+        this.terrainStrength = 1.0;
 
         this.init();
     }
@@ -51,17 +55,7 @@ export class World {
         this.effects = [];
         this.statsHistory = [];
         
-        // Generate terrain
-        this.terrain = [];
-        const scale = 0.005;
-        for (let x = 0; x < this.width; x+=10) {
-            const col: number[] = [];
-            for (let y = 0; y < this.height; y+=10) {
-                const noise = this.perlin.noise(x * scale, y * scale, 0);
-                col.push((noise + 1) / 2); // Normalize to 0-1
-            }
-            this.terrain.push(col);
-        }
+        this.regenerateTerrain();
 
         for (let i = 0; i < initialPopulation; i++) {
             this.entities.push(new Entity(Math.random() * this.width, Math.random() * this.height));
@@ -69,6 +63,18 @@ export class World {
 
         for (let i = 0; i < 50; i++) {
             this.food.push(new Vector(Math.random() * this.width, Math.random() * this.height));
+        }
+    }
+
+    regenerateTerrain() {
+        this.terrain = [];
+        for (let x = 0; x < this.width; x+=10) {
+            const col: number[] = [];
+            for (let y = 0; y < this.height; y+=10) {
+                const noise = this.perlin.noise(x * this.terrainScale, y * this.terrainScale, 0);
+                col.push((noise + 1) / 2); // Normalize to 0-1
+            }
+            this.terrain.push(col);
         }
     }
 
@@ -92,7 +98,7 @@ export class World {
         // We iterate backwards to safely remove dead entities
         for (let i = this.entities.length - 1; i >= 0; i--) {
             const e = this.entities[i];
-            e.update(this.width, this.height, this.food, this.entities, this.terrain);
+            e.update(this.width, this.height, this.food, this.entities, this.terrain, this.terrainStrength);
 
             if (e.isDead) {
                 // Entity died

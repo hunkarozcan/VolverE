@@ -9,12 +9,15 @@ interface ControlPanelProps {
     onStart: (initialPop: number) => void;
     onSave: () => void;
     onLoad: () => void;
+    onRegenerateTerrain: () => void;
 }
 
 export interface SimulationParams {
     foodSpawnRate: number;
     mutationRate: number;
     simulationSpeed: number;
+    terrainScale: number;
+    terrainStrength: number;
 }
 
 export default function ControlPanel({
@@ -25,12 +28,15 @@ export default function ControlPanel({
     onTogglePause,
     onStart,
     onSave,
-    onLoad
+    onLoad,
+    onRegenerateTerrain
 }: ControlPanelProps) {
     const [params, setParams] = useState<SimulationParams>({
         foodSpawnRate: 0.5,
         mutationRate: 0.05,
-        simulationSpeed: 1
+        simulationSpeed: 1,
+        terrainScale: 0.005,
+        terrainStrength: 1.0
     });
     const [initialPop, setInitialPop] = useState(20);
 
@@ -76,7 +82,7 @@ export default function ControlPanel({
                 />
             </div>
 
-            <div className="mb-8">
+            <div className="mb-6">
                 <label className="block text-sm font-medium mb-2 text-gray-600">Sim Speed: {params.simulationSpeed.toFixed(1)}x</label>
                 <input
                     type="range" min="0" max="10" step="0.1"
@@ -84,6 +90,37 @@ export default function ControlPanel({
                     onChange={(e) => handleChange('simulationSpeed', parseFloat(e.target.value))}
                     className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-pastel-secondary"
                 />
+            </div>
+
+            <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-100">
+                <h4 className="text-sm font-bold mb-4 text-gray-700">Terrain Settings</h4>
+                
+                <div className="mb-4">
+                    <label className="block text-xs font-medium mb-1 text-gray-500">Scale: {params.terrainScale.toFixed(4)}</label>
+                    <input
+                        type="range" min="0.001" max="0.05" step="0.001"
+                        value={params.terrainScale}
+                        onChange={(e) => handleChange('terrainScale', parseFloat(e.target.value))}
+                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-gray-500"
+                    />
+                </div>
+
+                <div className="mb-4">
+                    <label className="block text-xs font-medium mb-1 text-gray-500">Strength: {params.terrainStrength.toFixed(1)}</label>
+                    <input
+                        type="range" min="0" max="5" step="0.1"
+                        value={params.terrainStrength}
+                        onChange={(e) => handleChange('terrainStrength', parseFloat(e.target.value))}
+                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-gray-500"
+                    />
+                </div>
+
+                <button
+                    onClick={onRegenerateTerrain}
+                    className="w-full py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-xs font-bold rounded-lg transition-colors"
+                >
+                    Regenerate Terrain
+                </button>
             </div>
 
             <div className="flex flex-col gap-3">
