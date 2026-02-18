@@ -98,9 +98,14 @@
     --color-slate-600: #45556c;
     --color-slate-700: #314158;
     --color-slate-800: #1d293d;
+    --color-gray-50: #f9fafb;
+    --color-gray-100: #f3f4f6;
     --color-gray-200: #e5e7eb;
+    --color-gray-300: #d1d5dc;
     --color-gray-400: #99a1af;
+    --color-gray-500: #6a7282;
     --color-gray-600: #4a5565;
+    --color-gray-700: #364153;
     --color-white: #fff;
     --spacing: .25rem;
     --container-7xl: 80rem;
@@ -172,9 +177,14 @@
       --color-slate-600: lab(35.5623% -1.74978 -15.4316);
       --color-slate-700: lab(26.9569% -1.47018 -15.6993);
       --color-slate-800: lab(16.132% -.318021 -14.6672);
+      --color-gray-50: lab(98.2596% -.247031 -.706708);
+      --color-gray-100: lab(96.1596% -.082314 -1.13575);
       --color-gray-200: lab(91.6229% -.159085 -2.26791);
+      --color-gray-300: lab(85.1236% -.612259 -3.7138);
       --color-gray-400: lab(65.9269% -.832707 -8.17474);
+      --color-gray-500: lab(47.7841% -.393212 -10.0268);
       --color-gray-600: lab(35.6337% -1.58697 -10.8425);
+      --color-gray-700: lab(27.1134% -.956401 -12.3224);
     }
   }
 }
@@ -528,10 +538,6 @@
     margin-bottom: calc(var(--spacing) * 6);
   }
 
-  .mb-8 {
-    margin-bottom: calc(var(--spacing) * 8);
-  }
-
   .mb-12 {
     margin-bottom: calc(var(--spacing) * 12);
   }
@@ -686,6 +692,14 @@
     border-bottom-width: 1px;
   }
 
+  .border-gray-100 {
+    border-color: var(--color-gray-100);
+  }
+
+  .border-gray-300 {
+    border-color: var(--color-gray-300);
+  }
+
   .border-indigo-50 {
     border-color: var(--color-indigo-50);
   }
@@ -704,6 +718,10 @@
 
   .bg-amber-400 {
     background-color: var(--color-amber-400);
+  }
+
+  .bg-gray-50 {
+    background-color: var(--color-gray-50);
   }
 
   .bg-gray-200 {
@@ -750,6 +768,10 @@
 
   .bg-slate-100 {
     background-color: var(--color-slate-100);
+  }
+
+  .bg-white {
+    background-color: var(--color-white);
   }
 
   .bg-white\/50 {
@@ -929,8 +951,16 @@
     color: var(--color-gray-400);
   }
 
+  .text-gray-500 {
+    color: var(--color-gray-500);
+  }
+
   .text-gray-600 {
     color: var(--color-gray-600);
+  }
+
+  .text-gray-700 {
+    color: var(--color-gray-700);
   }
 
   .text-green-400 {
@@ -1024,6 +1054,10 @@
   .antialiased {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  .accent-gray-500 {
+    accent-color: var(--color-gray-500);
   }
 
   .accent-indigo-600 {
@@ -1122,6 +1156,12 @@
   @media (hover: hover) {
     .hover\:bg-amber-300:hover {
       background-color: var(--color-amber-300);
+    }
+  }
+
+  @media (hover: hover) {
+    .hover\:bg-gray-50:hover {
+      background-color: var(--color-gray-50);
     }
   }
 

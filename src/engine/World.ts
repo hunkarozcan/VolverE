@@ -1,6 +1,7 @@
 import { Entity } from './Entity';
 import { Vector } from './Vector';
 import { Effect } from './Effect';
+import { Perlin } from './Perlin';
 
 export interface WorldStats {
     time: number;
@@ -18,10 +19,14 @@ export class World {
     width: number;
     height: number;
     statsHistory: WorldStats[];
+    terrain: number[][]; // 2D array of heights 0-1
+    perlin: Perlin;
 
     // Parameters
     foodSpawnRate: number;
     mutationRate: number;
+    terrainScale: number;
+    terrainStrength: number;
 
     // Stats tracking
     totalDeaths: number = 0;
@@ -34,8 +39,12 @@ export class World {
         this.food = [];
         this.effects = [];
         this.statsHistory = [];
+        this.terrain = [];
+        this.perlin = new Perlin();
         this.foodSpawnRate = 0.5; // Chance per frame
         this.mutationRate = 0.05;
+        this.terrainScale = 0.005;
+        this.terrainStrength = 1.0;
 
         this.init();
     }
@@ -45,12 +54,27 @@ export class World {
         this.food = [];
         this.effects = [];
         this.statsHistory = [];
+        
+        this.regenerateTerrain();
+
         for (let i = 0; i < initialPopulation; i++) {
             this.entities.push(new Entity(Math.random() * this.width, Math.random() * this.height));
         }
 
         for (let i = 0; i < 50; i++) {
             this.food.push(new Vector(Math.random() * this.width, Math.random() * this.height));
+        }
+    }
+
+    regenerateTerrain() {
+        this.terrain = [];
+        for (let x = 0; x < this.width; x+=10) {
+            const col: number[] = [];
+            for (let y = 0; y < this.height; y+=10) {
+                const noise = this.perlin.noise(x * this.terrainScale, y * this.terrainScale, 0);
+                col.push((noise + 1) / 2); // Normalize to 0-1
+            }
+            this.terrain.push(col);
         }
     }
 
@@ -74,7 +98,7 @@ export class World {
         // We iterate backwards to safely remove dead entities
         for (let i = this.entities.length - 1; i >= 0; i--) {
             const e = this.entities[i];
-            e.update(this.width, this.height, this.food, this.entities);
+            e.update(this.width, this.height, this.food, this.entities, this.terrain, this.terrainStrength);
 
             if (e.isDead) {
                 // Entity died
@@ -179,5 +203,15 @@ export class World {
         world.totalDeaths = data.totalDeaths || 0;
         world.totalDeathAge = data.totalDeathAge || 0;
         return world;
+    }
+
+    getTerrainHeight(x: number, y: number): number {
+        const gridX = Math.floor(x / 10);
+        const gridY = Math.floor(y / 10);
+        
+        if (gridX >= 0 && gridX < this.terrain.length && gridY >= 0 && gridY < this.terrain[0].length) {
+            return this.terrain[gridX][gridY];
+        }
+        return 0;
     }
 }

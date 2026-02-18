@@ -37,7 +37,7 @@ export class Entity {
         this.size = 5 + this.genome.size * 15;
     }
 
-    update(width: number, height: number, food: Vector[], entities: Entity[]) {
+    update(width: number, height: number, food: Vector[], entities: Entity[], terrain?: number[][], terrainStrength: number = 1.0) {
         this.age++;
         this.reproUrge++;
 
@@ -55,6 +55,26 @@ export class Entity {
             this.findMate(entities);
         } else {
             this.hunt(food);
+        }
+
+        // Terrain Physics
+        if (terrain) {
+            const gridX = Math.floor(this.position.x / 10);
+            const gridY = Math.floor(this.position.y / 10);
+            
+            if (gridX >= 0 && gridX < terrain.length - 1 && gridY >= 0 && gridY < terrain[0].length - 1) {
+                const h = terrain[gridX][gridY];
+                const hRight = terrain[gridX + 1][gridY];
+                const hDown = terrain[gridX][gridY + 1];
+                
+                const slopeX = hRight - h;
+                const slopeY = hDown - h;
+                
+                // Gravity/Slope force: push downhill
+                // If slope is positive (uphill), force is negative.
+                const slopeForce = new Vector(-slopeX * 2 * terrainStrength, -slopeY * 2 * terrainStrength);
+                this.applyForce(slopeForce);
+            }
         }
 
         // Physics
@@ -130,10 +150,22 @@ export class Entity {
     }
 
     checkBoundaries(width: number, height: number) {
-        if (this.position.x < -this.size) this.position.x = width + this.size;
-        if (this.position.x > width + this.size) this.position.x = -this.size;
-        if (this.position.y < -this.size) this.position.y = height + this.size;
-        if (this.position.y > height + this.size) this.position.y = -this.size;
+        if (this.position.x < this.size) {
+            this.position.x = this.size;
+            this.velocity.x *= -1;
+        }
+        if (this.position.x > width - this.size) {
+            this.position.x = width - this.size;
+            this.velocity.x *= -1;
+        }
+        if (this.position.y < this.size) {
+            this.position.y = this.size;
+            this.velocity.y *= -1;
+        }
+        if (this.position.y > height - this.size) {
+            this.position.y = height - this.size;
+            this.velocity.y *= -1;
+        }
     }
 
     reproduce(partner: Entity, mutationRate: number = 0.05): Entity | null {
