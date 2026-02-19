@@ -30,6 +30,18 @@ export default function SimulationCanvas({ initialWorldData }: SimulationCanvasP
             worldRef.current.mutationRate = params.mutationRate;
             worldRef.current.terrainScale = params.terrainScale;
             worldRef.current.terrainStrength = params.terrainStrength;
+
+            // New: pollution controls
+            worldRef.current.poopIntervalMin = params.poopIntervalMin;
+            worldRef.current.poopIntervalMax = params.poopIntervalMax;
+            worldRef.current.wasteBaseAmount = params.wasteBaseAmount;
+            worldRef.current.wasteSizeFactor = params.wasteSizeFactor;
+            worldRef.current.wasteDecay = params.wasteDecay;
+            worldRef.current.wasteMaxAge = params.wasteMaxAge;
+            worldRef.current.wasteMinAmount = params.wasteMinAmount;
+            worldRef.current.pollutionRadius = params.pollutionRadius;
+            worldRef.current.pollutionThreshold = params.pollutionThreshold;
+            worldRef.current.pollutionDeathRate = params.pollutionDeathRate;
         }
         simSpeedRef.current = params.simulationSpeed;
         terrainStrengthRef.current = params.terrainStrength;
@@ -178,8 +190,8 @@ export default function SimulationCanvas({ initialWorldData }: SimulationCanvasP
                 }
             }
 
-            // Clear
-            ctx.fillStyle = '#2d2b42';
+            // Clear (lighter background)
+            ctx.fillStyle = '#3b3956';
             ctx.fillRect(0, 0, w.width, w.height);
 
             // Draw Terrain
@@ -208,12 +220,34 @@ export default function SimulationCanvas({ initialWorldData }: SimulationCanvasP
                 ctx.fill();
             }
 
+            // New: Draw Wastes
+            for (const waste of w.wastes) {
+                const alpha = Math.min(0.6, 0.15 + waste.amount * 0.3);
+                ctx.fillStyle = `rgba(110, 70, 20, ${alpha})`;
+                ctx.beginPath();
+                ctx.arc(waste.x, waste.y, 3 + waste.amount * 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
             // Draw Entities
             for (const e of w.entities) {
                 ctx.fillStyle = e.genome.color;
                 ctx.beginPath();
                 ctx.arc(e.position.x, e.position.y, e.size, 0, Math.PI * 2);
                 ctx.fill();
+
+                // Health bar
+                const barWidth = e.size * 2;
+                const barHeight = 3;
+                const barX = e.position.x - barWidth / 2;
+                const barY = e.position.y - e.size - 8;
+
+                ctx.fillStyle = 'rgba(255, 0, 0, 0.7)';
+                ctx.fillRect(barX, barY, barWidth, barHeight);
+
+                const healthRatio = Math.max(0, Math.min(1, e.health / e.maxHealth));
+                ctx.fillStyle = 'rgba(0, 255, 0, 0.8)';
+                ctx.fillRect(barX, barY, barWidth * healthRatio, barHeight);
 
                 // Draw eye/direction
                 const eyeX = e.position.x + e.velocity.normalize().x * (e.size * 0.7);
@@ -369,7 +403,7 @@ export default function SimulationCanvas({ initialWorldData }: SimulationCanvasP
                     onLoad={handleLoad}
                     onRegenerateTerrain={handleRegenerateTerrain}
                 />
-                <StatisticsPanel stats={statsHistory} />
+                <StatisticsPanel statsHistory={statsHistory} />
             </div>
         </div>
     );

@@ -10,6 +10,10 @@ export class Entity {
     age: number;
     isDead: boolean;
 
+    // New: health
+    maxHealth: number;
+    health: number;
+
     // Derived traits
     maxSpeed: number;
     maxForce: number;
@@ -18,6 +22,15 @@ export class Entity {
     reproUrge: number;
 
     currentTarget: Vector | null;
+
+    // New: pollution/immunity & poop timer
+    pollutionImmunity: number; // 0-1
+    poopCooldown: number;
+    poopReady: boolean;
+
+    // New: poop interval controls (set by World)
+    poopIntervalMin: number;
+    poopIntervalMax: number;
 
     constructor(x: number, y: number, genome?: Genome) {
         this.position = new Vector(x, y);
@@ -30,22 +43,36 @@ export class Entity {
         this.reproUrge = 0;
         this.currentTarget = null;
 
+        // New: health
+        this.maxHealth = 100;
+        this.health = 100;
+
         // Map genome to physical traits
         this.maxSpeed = 2 + this.genome.speed * 4;
         this.maxForce = 0.1 + this.genome.speed * 0.2;
         this.senseRadius = 50 + this.genome.senseRadius * 150;
         this.size = 5 + this.genome.size * 15;
+
+        // New: immunity & poop timer
+        this.pollutionImmunity = Entity.immunityFromColor(this.genome.color);
+        this.poopIntervalMin = 20;
+        this.poopIntervalMax = 120;
+        this.poopCooldown = this.poopIntervalMin + Math.floor(Math.random() * (this.poopIntervalMax - this.poopIntervalMin + 1));
+        this.poopReady = false;
     }
 
     update(width: number, height: number, food: Vector[], entities: Entity[], terrain?: number[][], terrainStrength: number = 1.0) {
         this.age++;
         this.reproUrge++;
 
+        // New: passive regen
+        this.health = Math.min(this.maxHealth, this.health + 0.03);
+
         // Metabolic cost
         const cost = (this.size * 0.01) + (this.maxSpeed * 0.01) + (this.senseRadius * 0.001);
         this.energy -= cost;
 
-        if (this.energy <= 0 || this.age > 2000) {
+        if (this.energy <= 0 || this.age > 2000 || this.health <= 0) {
             this.isDead = true;
             return;
         }
@@ -55,6 +82,15 @@ export class Entity {
             this.findMate(entities);
         } else {
             this.hunt(food);
+        }
+
+        // New: poop timer
+        this.poopCooldown--;
+        if (this.poopCooldown <= 0) {
+            this.poopReady = true;
+            this.poopCooldown = this.poopIntervalMin + Math.floor(Math.random() * (this.poopIntervalMax - this.poopIntervalMin + 1));
+            this.poopCooldown -= Math.floor(this.size * 0.5);
+            if (this.poopCooldown < 5) this.poopCooldown = 5;
         }
 
         // Terrain Physics
@@ -70,8 +106,6 @@ export class Entity {
                 const slopeX = hRight - h;
                 const slopeY = hDown - h;
                 
-                // Gravity/Slope force: push downhill
-                // If slope is positive (uphill), force is negative.
                 const slopeForce = new Vector(-slopeX * 2 * terrainStrength, -slopeY * 2 * terrainStrength);
                 this.applyForce(slopeForce);
             }
@@ -188,7 +222,9 @@ export class Entity {
             genome: this.genome,
             energy: this.energy,
             age: this.age,
-            reproUrge: this.reproUrge
+            reproUrge: this.reproUrge,
+            health: this.health,
+            maxHealth: this.maxHealth
         };
     }
 
@@ -198,6 +234,21 @@ export class Entity {
         e.energy = data.energy;
         e.age = data.age;
         e.reproUrge = data.reproUrge;
+        e.maxHealth = data.maxHealth ?? 100;
+        e.health = data.health ?? e.maxHealth;
         return e;
+    }
+
+    private static immunityFromColor(color: string): number {
+        // Expect #RRGGBB
+        if (!color || color[0] !== '#' || color.length !== 7) return 0.5;
+        const r = parseInt(color.slice(1, 3), 16);
+        const g = parseInt(color.slice(3, 5), 16);
+        const b = parseInt(color.slice(5, 7), 16);
+        if (Number.isNaN(r) || Number.isNaN(g) || Number.isNaN(b)) return 0.5;
+
+        // Luminance-based immunity (0.2 - 0.8)
+        const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+        return 0.2 + luminance * 0.6;
     }
 }

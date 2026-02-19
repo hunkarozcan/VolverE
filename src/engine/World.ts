@@ -12,10 +12,19 @@ export interface WorldStats {
     avgDeathAge: number;
 }
 
+interface Waste {
+    x: number;
+    y: number;
+    amount: number; // 0-1+
+    age: number;
+    maxAge: number;
+}
+
 export class World {
     entities: Entity[];
     food: Vector[];
     effects: Effect[];
+    wastes: Waste[]; // New: pollution
     width: number;
     height: number;
     statsHistory: WorldStats[];
@@ -28,9 +37,21 @@ export class World {
     terrainScale: number;
     terrainStrength: number;
 
+    // New: pollution params
+    poopIntervalMin: number;
+    poopIntervalMax: number;
+    wasteBaseAmount: number;
+    wasteSizeFactor: number;
+    wasteDecay: number;
+    wasteMaxAge: number;
+    wasteMinAmount: number;
+    pollutionRadius: number;
+    pollutionThreshold: number;
+    pollutionDeathRate: number;
+
     // Stats tracking
-    totalDeaths: number = 0;
-    totalDeathAge: number = 0;
+    totalDeaths: number;
+    totalDeathAge: number;
 
     constructor(width: number, height: number) {
         this.width = width;
@@ -38,6 +59,7 @@ export class World {
         this.entities = [];
         this.food = [];
         this.effects = [];
+        this.wastes = [];
         this.statsHistory = [];
         this.terrain = [];
         this.perlin = new Perlin();
@@ -46,6 +68,21 @@ export class World {
         this.terrainScale = 0.005;
         this.terrainStrength = 1.0;
 
+        // New defaults
+        this.poopIntervalMin = 20;
+        this.poopIntervalMax = 120;
+        this.wasteBaseAmount = 0.4;
+        this.wasteSizeFactor = 0.03;
+        this.wasteDecay = 0.995;
+        this.wasteMaxAge = 600;
+        this.wasteMinAmount = 0.05;
+        this.pollutionRadius = 60;
+        this.pollutionThreshold = 0.8;
+        this.pollutionDeathRate = 0.01;
+
+        this.totalDeaths = 0;
+        this.totalDeathAge = 0;
+
         this.init();
     }
 
@@ -53,6 +90,7 @@ export class World {
         this.entities = [];
         this.food = [];
         this.effects = [];
+        this.wastes = [];
         this.statsHistory = [];
         
         this.regenerateTerrain();
@@ -92,13 +130,52 @@ export class World {
             }
         }
 
+        // Update wastes (decay)
+        for (let i = this.wastes.length - 1; i >= 0; i--) {
+            const w = this.wastes[i];
+            w.age++;
+            w.amount *= this.wasteDecay;
+            if (w.age > this.wasteMaxAge || w.amount < this.wasteMinAmount) {
+                this.wastes.splice(i, 1);
+            }
+        }
+
         // Update entities
         const newEntities: Entity[] = [];
 
         // We iterate backwards to safely remove dead entities
         for (let i = this.entities.length - 1; i >= 0; i--) {
             const e = this.entities[i];
+
+            // Push poop timing params to entities
+            e.poopIntervalMin = this.poopIntervalMin;
+            e.poopIntervalMax = this.poopIntervalMax;
+
             e.update(this.width, this.height, this.food, this.entities, this.terrain, this.terrainStrength);
+
+            if (e.poopReady) {
+                const amount = Math.min(1.5, this.wasteBaseAmount + e.size * this.wasteSizeFactor);
+                this.wastes.push({
+                    x: e.position.x,
+                    y: e.position.y,
+                    amount,
+                    age: 0,
+                    maxAge: this.wasteMaxAge
+                });
+                e.poopReady = false;
+            }
+
+            if (!e.isDead) {
+                const pollution = this.getPollutionAt(e.position.x, e.position.y, this.pollutionRadius);
+                if (pollution > this.pollutionThreshold) {
+                    const excess = Math.min(2, (pollution - this.pollutionThreshold) / Math.max(0.01, (1 - this.pollutionThreshold)));
+                    const damage = (this.pollutionDeathRate * 100) * (1 - e.pollutionImmunity) * excess;
+                    e.health -= damage;
+                    if (e.health <= 0) {
+                        e.isDead = true;
+                    }
+                }
+            }
 
             if (e.isDead) {
                 // Entity died
@@ -126,13 +203,11 @@ export class World {
             }
 
             // Reproduce
-            // Check collision with other entities for mating
             for (let other of this.entities) {
                 if (e !== other && e.position.dist(other.position) < (e.size + other.size)) {
                     const child = e.reproduce(other, this.mutationRate);
                     if (child) {
                         newEntities.push(child);
-                        // Birth effect
                         this.effects.push({
                             x: child.position.x,
                             y: child.position.y,
@@ -141,7 +216,6 @@ export class World {
                             maxAge: 40,
                             color: 'rgba(255, 255, 255, 0.8)'
                         });
-                        // Mating effect (at midpoint)
                         this.effects.push({
                             x: (e.position.x + other.position.x) / 2,
                             y: (e.position.y + other.position.y) / 2,
@@ -184,6 +258,7 @@ export class World {
             height: this.height,
             entities: this.entities.map(e => e.toJSON()),
             food: this.food,
+            wastes: this.wastes,
             statsHistory: this.statsHistory,
             foodSpawnRate: this.foodSpawnRate,
             mutationRate: this.mutationRate,
@@ -197,6 +272,7 @@ export class World {
         const world = new World(data.width, data.height);
         world.entities = data.entities.map((e: any) => Entity.fromJSON(e));
         world.food = data.food.map((f: any) => Vector.fromJSON(f));
+        world.wastes = data.wastes || [];
         world.statsHistory = data.statsHistory || [];
         world.foodSpawnRate = data.foodSpawnRate;
         world.mutationRate = data.mutationRate;
@@ -213,5 +289,19 @@ export class World {
             return this.terrain[gridX][gridY];
         }
         return 0;
+    }
+
+    private getPollutionAt(x: number, y: number, radius: number): number {
+        let sum = 0;
+        for (const w of this.wastes) {
+            const dx = w.x - x;
+            const dy = w.y - y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < radius) {
+                const influence = 1 - (dist / radius);
+                sum += w.amount * influence;
+            }
+        }
+        return sum;
     }
 }

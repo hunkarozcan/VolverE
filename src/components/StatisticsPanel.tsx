@@ -2,78 +2,90 @@ import React from 'react';
 import { WorldStats } from '../engine/World';
 
 interface StatisticsPanelProps {
-    stats: WorldStats[];
+    statsHistory: WorldStats[];
 }
 
-export default function StatisticsPanel({ stats }: StatisticsPanelProps) {
-    if (stats.length < 2) return null;
+const StatisticsPanel = ({ statsHistory }: StatisticsPanelProps) => {
+    // Dynamic scaling for charts
+    const maxPopulation = Math.max(...statsHistory.map(s => s.population), 50);
+    const maxFood = Math.max(...statsHistory.map(s => s.food), 50);
+    const maxAvgEnergy = Math.max(...statsHistory.map(s => s.avgEnergy), 50);
+    const maxAvgSpeed = Math.max(...statsHistory.map(s => s.avgSpeed), 5);
 
-    const width = 300;
-    const height = 100;
-    const padding = 5;
-
-    const renderLine = (dataKey: keyof WorldStats, color: string, maxVal?: number) => {
-        const values = stats.map(s => s[dataKey] as number);
-        const max = maxVal || Math.max(...values, 1);
-        const min = 0; // Always start from 0 for better context
-
-        const points = values.map((val, i) => {
-            const x = (i / (stats.length - 1)) * (width - padding * 2) + padding;
-            const y = height - ((val - min) / (max - min)) * (height - padding * 2) - padding;
-            return `${x},${y}`;
-        }).join(' ');
-
-        return <polyline points={points} fill="none" stroke={color} strokeWidth="2" />;
-    };
+    const scalePopulation = (val: number) => (val / maxPopulation) * 100;
+    const scaleFood = (val: number) => (val / maxFood) * 100;
+    const scaleEnergy = (val: number) => (val / maxAvgEnergy) * 100;
+    const scaleSpeed = (val: number) => (val / maxAvgSpeed) * 100;
 
     return (
-        <div className="p-4 bg-pastel-surface rounded-xl shadow-lg shadow-indigo-100 text-pastel-text w-full mt-6">
-            <h3 className="text-lg font-bold mb-4 text-pastel-primary">Live Statistics</h3>
+        <div className="w-full h-full flex flex-col gap-6 p-6 bg-white rounded-lg overflow-y-auto">
+            <h3 className="text-lg font-bold text-gray-800">Live Statistics</h3>
 
-            <div className="grid grid-cols-1 gap-4">
-                {/* Population */}
-                <div className="bg-white/50 rounded-lg p-2">
-                    <div className="flex justify-between text-xs mb-1">
-                        <span className="text-indigo-400 font-bold">Population</span>
-                        <span className="text-indigo-600">{stats[stats.length - 1].population}</span>
-                    </div>
-                    <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} className="overflow-visible">
-                        {renderLine('population', '#6366f1')}
-                    </svg>
-                </div>
+            {/* Population Chart */}
+            <div>
+                <h4 className="text-sm font-semibold text-blue-600 mb-2">
+                    Population {statsHistory.length > 0 ? `(${statsHistory[statsHistory.length - 1].population})` : ''}
+                </h4>
+                <svg viewBox="0 0 600 150" className="w-full border border-gray-200 rounded">
+                    <polyline
+                        points={statsHistory.map((s, i) => `${(i / statsHistory.length) * 600},${150 - scalePopulation(s.population)}`).join(' ')}
+                        fill="none"
+                        stroke="#3b82f6"
+                        strokeWidth="2"
+                    />
+                </svg>
+                <p className="text-xs text-gray-500 mt-1">Max: {maxPopulation}</p>
+            </div>
 
-                {/* Food */}
-                <div className="bg-white/50 rounded-lg p-2">
-                    <div className="flex justify-between text-xs mb-1">
-                        <span className="text-green-400 font-bold">Food</span>
-                        <span className="text-green-600">{stats[stats.length - 1].food}</span>
-                    </div>
-                    <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} className="overflow-visible">
-                        {renderLine('food', '#4ade80')}
-                    </svg>
-                </div>
+            {/* Food Chart */}
+            <div>
+                <h4 className="text-sm font-semibold text-green-600 mb-2">
+                    Food {statsHistory.length > 0 ? `(${statsHistory[statsHistory.length - 1].food})` : ''}
+                </h4>
+                <svg viewBox="0 0 600 150" className="w-full border border-gray-200 rounded">
+                    <polyline
+                        points={statsHistory.map((s, i) => `${(i / statsHistory.length) * 600},${150 - scaleFood(s.food)}`).join(' ')}
+                        fill="none"
+                        stroke="#4ade80"
+                        strokeWidth="2"
+                    />
+                </svg>
+                <p className="text-xs text-gray-500 mt-1">Max: {maxFood}</p>
+            </div>
 
-                {/* Avg Energy */}
-                <div className="bg-white/50 rounded-lg p-2">
-                    <div className="flex justify-between text-xs mb-1">
-                        <span className="text-yellow-400 font-bold">Avg Energy</span>
-                        <span className="text-yellow-600">{stats[stats.length - 1].avgEnergy.toFixed(1)}</span>
-                    </div>
-                    <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} className="overflow-visible">
-                        {renderLine('avgEnergy', '#facc15', 200)}
-                    </svg>
-                </div>
-                {/* Avg Speed */}
-                <div className="bg-white/50 rounded-lg p-2">
-                    <div className="flex justify-between text-xs mb-1">
-                        <span className="text-cyan-400 font-bold">Avg Speed</span>
-                        <span className="text-cyan-600">{stats[stats.length - 1].avgSpeed.toFixed(2)}</span>
-                    </div>
-                    <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} className="overflow-visible">
-                        {renderLine('avgSpeed', '#22d3ee', 6)}
-                    </svg>
-                </div>
+            {/* Average Energy Chart */}
+            <div>
+                <h4 className="text-sm font-semibold text-yellow-600 mb-2">
+                    Avg Energy {statsHistory.length > 0 ? `(${statsHistory[statsHistory.length - 1].avgEnergy.toFixed(1)})` : ''}
+                </h4>
+                <svg viewBox="0 0 600 150" className="w-full border border-gray-200 rounded">
+                    <polyline
+                        points={statsHistory.map((s, i) => `${(i / statsHistory.length) * 600},${150 - scaleEnergy(s.avgEnergy)}`).join(' ')}
+                        fill="none"
+                        stroke="#fbbf24"
+                        strokeWidth="2"
+                    />
+                </svg>
+                <p className="text-xs text-gray-500 mt-1">Max: {maxAvgEnergy.toFixed(1)}</p>
+            </div>
+
+            {/* Average Speed Chart */}
+            <div>
+                <h4 className="text-sm font-semibold text-cyan-600 mb-2">
+                    Avg Speed {statsHistory.length > 0 ? `(${statsHistory[statsHistory.length - 1].avgSpeed.toFixed(2)})` : ''}
+                </h4>
+                <svg viewBox="0 0 600 150" className="w-full border border-gray-200 rounded">
+                    <polyline
+                        points={statsHistory.map((s, i) => `${(i / statsHistory.length) * 600},${150 - scaleSpeed(s.avgSpeed)}`).join(' ')}
+                        fill="none"
+                        stroke="#06b6d4"
+                        strokeWidth="2"
+                    />
+                </svg>
+                <p className="text-xs text-gray-500 mt-1">Max: {maxAvgSpeed.toFixed(2)}</p>
             </div>
         </div>
     );
-}
+};
+
+export default StatisticsPanel;
